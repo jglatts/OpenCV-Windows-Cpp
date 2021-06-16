@@ -16,25 +16,16 @@ using namespace std;
 
 #define ESC_KEY 27
 
-static void detectFace(Mat& img) {
+static void detectFace(Mat& img, CascadeClassifier& cascade, CascadeClassifier& nestedCascade) {
 	vector<Rect> faces, faces2;
 	Mat gray, smallImg;
-	CascadeClassifier cascade, nestedCascade;
-	String path_nested = "C:\\Users\\johng\\opencv\\sources\\data\\haarcascades\\haarcascade_eye_tree_eyeglasses.xml";
-	String path_cas = "C:\\Users\\johng\\opencv\\sources\\data\\haarcascades\\haarcascade_frontalface_alt.xml";
-	if (!(nestedCascade.load(path_nested))) {
-		cout << "Didnt Load NestedCascade" << endl;
-		exit(1);
-	}
-	if (!(cascade.load(path_cas))) {
-		cout << "Didnt Load Cascade" << endl;
-		exit(1);
-	}
 	cvtColor(img, gray, COLOR_BGR2GRAY);
+	//resize(gray, smallImg, (200, 200);
 	resize(gray, smallImg, Size(), 1.0, 1.0, INTER_LINEAR);
-	equalizeHist(smallImg, smallImg);
+	//equalizeHist(smallImg, smallImg);
 	cascade.detectMultiScale(smallImg, faces, 1.1, 2, 0 | CASCADE_SCALE_IMAGE, Size(30, 30));
-	for (size_t i = 0; i < faces.size(); i++) {
+	for (size_t i = 0; i < faces.size(); i++)
+	{
 		Rect r = faces[i];
 		Mat smallImgROI;
 		vector<Rect> nestedObjects;
@@ -43,7 +34,7 @@ static void detectFace(Mat& img) {
 		int radius;
 		double scale = 1.0;
 		double aspect_ratio = (double)r.width / r.height;
-		if (0.75 < aspect_ratio && aspect_ratio < 1.3) {
+		if (0.75 < aspect_ratio && aspect_ratio < 1.3){
 			center.x = cvRound((r.x + r.width * 0.5) * scale);
 			center.y = cvRound((r.y + r.height * 0.5) * scale);
 			radius = cvRound((r.width + r.height) * 0.25 * scale);
@@ -71,6 +62,17 @@ static void detectFace(Mat& img) {
 static void runDetection() {
 	VideoCapture cap;
 	Mat frame;
+	CascadeClassifier cascade, nestedCascade;
+	String path_nested = "C:\\Users\\johng\\opencv\\sources\\data\\haarcascades\\haarcascade_eye_tree_eyeglasses.xml";
+	String path_cas = "C:\\Users\\johng\\opencv\\sources\\data\\haarcascades\\haarcascade_frontalface_alt.xml";
+	if (!(nestedCascade.load(path_nested))) {
+		cout << "Didnt Load NestedCascade" << endl;
+		exit(1);
+	}
+	if (!(cascade.load(path_cas))) {
+		cout << "Didnt Load Cascade" << endl;
+		exit(1);
+	}
 	if (!cap.open(0)) {
 		cout << "Could not open or find the webam" << endl;
 		exit(1);
@@ -78,8 +80,8 @@ static void runDetection() {
 	while (1) {
 		cap.read(frame);
 		if (frame.empty()) break;
-		detectFace(frame);
-		if (waitKey(10) == ESC_KEY) break;
+		detectFace(frame, cascade, nestedCascade);
+		if (waitKey(1) == ESC_KEY) break;
 	}
 }
 
