@@ -19,7 +19,7 @@ using namespace std;
 uint16_t face_count = 0;
 
 static void detectFace(Mat& img, CascadeClassifier& cascade, CascadeClassifier& nestedCascade) {
-	vector<Rect> faces, faces2;
+	vector<Rect> faces;
 	Mat gray, small_img;
 	cvtColor(img, gray, COLOR_BGR2GRAY);
 	resize(gray, small_img, Size(), 1.0, 1.0, INTER_LINEAR);
