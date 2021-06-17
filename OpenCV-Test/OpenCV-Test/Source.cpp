@@ -16,45 +16,43 @@ using namespace std;
 
 #define ESC_KEY 27
 
+uint16_t face_count = 0;
+
 static void detectFace(Mat& img, CascadeClassifier& cascade, CascadeClassifier& nestedCascade) {
 	vector<Rect> faces, faces2;
-	Mat gray, smallImg;
+	Mat gray, small_img;
 	cvtColor(img, gray, COLOR_BGR2GRAY);
-	//resize(gray, smallImg, (200, 200);
-	resize(gray, smallImg, Size(), 1.0, 1.0, INTER_LINEAR);
-	//equalizeHist(smallImg, smallImg);
-	cascade.detectMultiScale(smallImg, faces, 1.1, 2, 0 | CASCADE_SCALE_IMAGE, Size(30, 30));
+	resize(gray, small_img, Size(), 1.0, 1.0, INTER_LINEAR);
+	// face detection 
+	cascade.detectMultiScale(small_img, faces, 1.3, 2, 0 | CASCADE_SCALE_IMAGE, Size(30, 30));
 	for (size_t i = 0; i < faces.size(); i++)
 	{
 		Rect r = faces[i];
-		Mat smallImgROI;
-		vector<Rect> nestedObjects;
+		Mat img_roi;
+		vector<Rect> eyes;
 		Point center;
 		Scalar color = Scalar(255, 0, 0); 
+		Scalar eye_color = Scalar(0, 255, 0); 
 		int radius;
-		double scale = 1.0;
 		double aspect_ratio = (double)r.width / r.height;
 		if (0.75 < aspect_ratio && aspect_ratio < 1.3){
-			center.x = cvRound((r.x + r.width * 0.5) * scale);
-			center.y = cvRound((r.y + r.height * 0.5) * scale);
-			radius = cvRound((r.width + r.height) * 0.25 * scale);
+			center.x = cvRound((r.x + r.width * 0.5));
+			center.y = cvRound((r.y + r.height * 0.5));
+			radius = cvRound((r.width + r.height) * 0.25);
 			circle(img, center, radius, color, 3, 8, 0);
 		}
-		else {
-			rectangle(img, Point(cvRound(r.x * scale), cvRound(r.y * scale)),
-				Point(cvRound((r.x + r.width - 1) * scale),
-					cvRound((r.y + r.height - 1) * scale)), color, 3, 8, 0);
+		img_roi = small_img(r);	// construct a Mat object with a detected Face(ROI)
+		imshow("ROI FaceImage", img_roi);
+		// eye detection 
+		nestedCascade.detectMultiScale(img_roi, eyes, 1.3, 2, 0 | CASCADE_SCALE_IMAGE, Size(30, 30));
+		for (size_t j = 0; j < eyes.size(); j++) {
+			Rect nr = eyes[j];
+			center.x = cvRound((r.x + nr.x + nr.width * 0.5));
+			center.y = cvRound((r.y + nr.y + nr.height * 0.5));
+			radius = cvRound((nr.width + nr.height) * 0.25);
+			circle(img, center, radius, eye_color, -2, 8, 0);
 		}
-		if (nestedCascade.empty()) continue;
-		smallImgROI = smallImg(r);
-		nestedCascade.detectMultiScale(smallImgROI, nestedObjects, 1.1, 2, 0 | CASCADE_SCALE_IMAGE, Size(30, 30));
-		for (size_t j = 0; j < nestedObjects.size(); j++) {
-			Rect nr = nestedObjects[j];
-			center.x = cvRound((r.x + nr.x + nr.width * 0.5) * scale);
-			center.y = cvRound((r.y + nr.y + nr.height * 0.5) * scale);
-			radius = cvRound((nr.width + nr.height) * 0.25 * scale);
-			circle(img, center, radius, color, 3, 8, 0);
-		}
+		cout << "Face Count: " << face_count++ << endl;
 	}
 	imshow("Face Detection", img);
 }
@@ -62,15 +60,15 @@ static void detectFace(Mat& img, CascadeClassifier& cascade, CascadeClassifier& 
 static void runDetection() {
 	VideoCapture cap;
 	Mat frame;
-	CascadeClassifier cascade, nestedCascade;
+	CascadeClassifier face_cascade, eye_cascade;
 	String path_nested = "C:\\Users\\johng\\opencv\\sources\\data\\haarcascades\\haarcascade_eye_tree_eyeglasses.xml";
 	String path_cas = "C:\\Users\\johng\\opencv\\sources\\data\\haarcascades\\haarcascade_frontalface_alt.xml";
-	if (!(nestedCascade.load(path_nested))) {
-		cout << "Didnt Load NestedCascade" << endl;
+	if (!(eye_cascade.load(path_nested))) {
+		cout << "Didnt Load EyeCascade" << endl;
 		exit(1);
 	}
-	if (!(cascade.load(path_cas))) {
-		cout << "Didnt Load Cascade" << endl;
+	if (!(face_cascade.load(path_cas))) {
+		cout << "Didnt Load FaceCascade" << endl;
 		exit(1);
 	}
 	if (!cap.open(0)) {
@@ -80,7 +78,7 @@ static void runDetection() {
 	while (1) {
 		cap.read(frame);
 		if (frame.empty()) break;
-		detectFace(frame, cascade, nestedCascade);
+		detectFace(frame, face_cascade, eye_cascade);
 		if (waitKey(1) == ESC_KEY) break;
 	}
 }
