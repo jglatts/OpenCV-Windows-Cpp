@@ -16,14 +16,12 @@ using namespace cv;
 using namespace std;
 
 namespace jdg {
-	#define ESC_KEY 27
+	#define ESC_KEY    27
+	#define NO_WEBCAM  1
+	#define USE_WEBCAM 0
 	
 	uint16_t face_count = 0;
 	
-	static void applyThresh(Mat& img, int thresh) {
-
-	}
-
 	static double angle(Point pt1, Point pt2, Point pt0) {
 		double dx1 = pt1.x - pt0.x;
 		double dy1 = pt1.y - pt0.y;
@@ -45,14 +43,11 @@ namespace jdg {
 	}
 
 	static void detectRect(Mat& src, bool check) {
-		// detecting ALL the edges with Canny
-		// this means WIRES are being detected and throws it off
-		// check out thresholds?? or better canny params??
 		Mat gray, bw, dst;
 		vector<vector<Point>> contours;
 		vector<Point> approx;
 		dst = src.clone();
-		cvtColor(src, gray, COLOR_RGB2GRAY);
+		gray = src.clone(); // threshold applies the greyscale
 		Canny(gray, bw, 40, 120, 5);
 		findContours(bw.clone(), contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
 		cout << "Contours Size: " << contours.size() << endl;
@@ -82,11 +77,10 @@ namespace jdg {
 	}
 
 	static void runRectDetection(bool check) {
-		// try with webcam and parts 
 		VideoCapture cap;
 		Mat frame;
 		Mat img = imread("Part_OpenCV.jpg");
-		if (check) detectRect(img, true);
+		if (check) detectRect(img, NO_WEBCAM);
 		else {
 			if (!cap.open(0)) {
 				cout << "Could not open or find the webam" << endl;
@@ -95,7 +89,40 @@ namespace jdg {
 			while (1) {
 				cap.read(frame);
 				if (frame.empty()) break;
-				detectRect(frame, false);
+				detectRect(frame, USE_WEBCAM);
+				if (waitKey(1) == ESC_KEY) break;
+			}
+		}
+	}
+
+	Mat applyThresh(Mat& img, int thresh) {
+		Mat dst, gray;
+		int thresh_type = 3; // threshold to zero
+		cvtColor(img, gray, COLOR_BGR2GRAY);
+		threshold(gray, dst, thresh, 255, thresh_type);
+		return dst;
+	}
+
+	static void testThresh(bool check) {
+		VideoCapture cap;
+		Mat frame;
+		Mat img = imread("Part_OpenCV.jpg");
+		if (check) {
+			Mat img_thresh = applyThresh(img, 0);
+			detectRect(img_thresh, NO_WEBCAM);
+			//imshow("test", img_thresh);
+			//waitKey(0);
+		}
+		else {
+			if (!cap.open(0)) {
+				cout << "Could not open or find the webam" << endl;
+				exit(1);
+			}
+			while (1) {
+				cap.read(frame);
+				if (frame.empty()) break;
+				// add logic here 
+				//detectRect(img_thresh, USE_WEBCAM);
 				if (waitKey(1) == ESC_KEY) break;
 			}
 		}
@@ -201,8 +228,9 @@ namespace jdg {
 		setBreakOnError(true);
 		//distortImg("kush.png");
 		//getWebCam();
-		runRectDetection(true);
+		//runRectDetection(true);
 		//runDetection();
+		testThresh(true);
 		destroyAllWindows();
 	}
 }
