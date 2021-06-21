@@ -16,6 +16,7 @@ using namespace cv;
 using namespace std;
 
 namespace jdg {
+
 	#define ESC_KEY    27
 	#define NO_WEBCAM  1
 	#define USE_WEBCAM 0
@@ -43,19 +44,28 @@ namespace jdg {
 	}
 
 	static void detectRect(Mat& src, bool check) {
-		Mat gray, bw, dst;
+		Mat bw, dst;
 		vector<vector<Point>> contours;
 		vector<Point> approx;
+		int ratio = 3;
+		int low_thresh = 100;
 		dst = src.clone();
-		gray = src.clone(); // threshold applies the greyscale
-		Canny(gray, bw, 40, 120, 5);
+		// may need a call to blur() for filtering purposes
+		// canny very sensitive with current params -> good or bad?
+		// tweak Canny param values -> research docs
+		// try a trackbar?? at somepoint and see what we get 
+		// https://docs.opencv.org/3.4/da/d5c/tutorial_canny_detector.html
+		Canny(dst, bw, low_thresh, low_thresh * ratio, 5);
 		findContours(bw.clone(), contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
 		cout << "Contours Size: " << contours.size() << endl;
 		for (int i = 0; i < contours.size(); i++) {
+			// find the angles -> should be reviewed and tweaked
 			approxPolyDP(Mat(contours[i]), approx, arcLength(Mat(contours[i]), true) * 0.02, true);
+			// check the contour area -> should be tweaked
 			if (fabs(contourArea(contours[i])) < 100 || !isContourConvex(approx)) continue;
 			int vertices = approx.size();
 			vector<double> cosine_corners;
+			// add cosine angles 
 			for (int j = 2; j < vertices; j++) {
 				cosine_corners.push_back(angle(approx[j % vertices], approx[j - 2], approx[j - 1]));
 			}
@@ -74,6 +84,20 @@ namespace jdg {
 		imshow("dst", dst);
 		imshow("BW", bw);
 		if (check) waitKey(0);
+	}
+
+	static void drawTextCenter(Mat& img, const char* text) {
+		/* Implement to draw centered text on image
+		int font = FONT_HERSHEY_SIMPLEX;
+		double scale = 0.4;
+		int thickness = 1;
+		int baseline = 0;
+		Size text = getTextSize(text, font, scale, thickness, &baseline);
+		Rect r = boundingRect(img);
+		Point pt(r.x + ((r.width - text.width) / 2), r.y + ((r.height + text.height) / 2));
+		rectangle(im, pt + Point(0, baseline), pt + Point(text.width, -text.height), CV_RGB(255, 255, 255), FILLED);
+		putText(im, label, pt, font, scale, CV_RGB(0, 0, 0), thickness, 8);
+		*/
 	}
 
 	static void runRectDetection(bool check) {
@@ -96,24 +120,29 @@ namespace jdg {
 	}
 
 	Mat applyThresh(Mat& img, int thresh) {
+		//https://docs.opencv.org/3.4/db/d8e/tutorial_threshold.html
 		Mat dst, gray;
-		int thresh_type = 3; // threshold to zero
+		int thresh_type = 2; // threshold truncate
 		cvtColor(img, gray, COLOR_BGR2GRAY);
 		threshold(gray, dst, thresh, 255, thresh_type);
 		return dst;
 	}
 
 	static void testThresh(bool check) {
-		VideoCapture cap;
-		Mat frame;
-		Mat img = imread("Part_OpenCV.jpg");
 		if (check) {
-			Mat img_thresh = applyThresh(img, 0);
-			detectRect(img_thresh, NO_WEBCAM);
-			//imshow("test", img_thresh);
+			Mat img = imread("Part_OpenCV.jpg");
+			// working on the best fine-tuned thresh params
+			Mat img_thresh = applyThresh(img, 103);
+			Mat dst;
+			resize(img_thresh, dst, Size(300, 300));
+			// find best params for thresh then call detectRect() 
+			//imshow("Test Thresh", img_thresh);
 			//waitKey(0);
+			detectRect(dst, NO_WEBCAM);
 		}
 		else {
+			Mat frame;
+			VideoCapture cap;
 			if (!cap.open(0)) {
 				cout << "Could not open or find the webam" << endl;
 				exit(1);
@@ -121,8 +150,7 @@ namespace jdg {
 			while (1) {
 				cap.read(frame);
 				if (frame.empty()) break;
-				// add logic here 
-				//detectRect(img_thresh, USE_WEBCAM);
+				detectRect(frame, USE_WEBCAM);
 				if (waitKey(1) == ESC_KEY) break;
 			}
 		}
@@ -228,9 +256,9 @@ namespace jdg {
 		setBreakOnError(true);
 		//distortImg("kush.png");
 		//getWebCam();
-		//runRectDetection(true);
+		//runRectDetection(NO_WEBCAM);
 		//runDetection();
-		testThresh(true);
+		testThresh(NO_WEBCAM);
 		destroyAllWindows();
 	}
 }
