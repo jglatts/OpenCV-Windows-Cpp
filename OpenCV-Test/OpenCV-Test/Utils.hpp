@@ -3,6 +3,9 @@
 	Also testing some library functionality
 	author: JDG
 */
+#ifndef __UTILS__H__
+#define __UTILS__H__
+
 #include <opencv2/opencv.hpp>
 #include <opencv2/objdetect.hpp>
 #include <opencv2/highgui.hpp>
@@ -48,14 +51,14 @@ namespace jdg {
 		vector<vector<Point>> contours;
 		vector<Point> approx;
 		int ratio = 3;
-		int low_thresh = 100;
+		int low_thresh = 50;
 		dst = src.clone();
 		// may need a call to blur() for filtering purposes
 		// canny very sensitive with current params -> good or bad?
 		// tweak Canny param values -> research docs
 		// try a trackbar?? at somepoint and see what we get 
 		// https://docs.opencv.org/3.4/da/d5c/tutorial_canny_detector.html
-		Canny(dst, bw, low_thresh, low_thresh * ratio, 5);
+		Canny(dst, bw, low_thresh, low_thresh * ratio, 3);
 		findContours(bw.clone(), contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
 		cout << "Contours Size: " << contours.size() << endl;
 		for (int i = 0; i < contours.size(); i++) {
@@ -130,6 +133,7 @@ namespace jdg {
 
 	static void testThresh(bool check) {
 		if (check) {
+			// get a clearer image of the part 
 			Mat img = imread("Part_OpenCV.jpg");
 			// working on the best fine-tuned thresh params
 			Mat img_thresh = applyThresh(img, 103);
@@ -252,6 +256,13 @@ namespace jdg {
 		}
 	}
 
+	static void runTrackBar() {
+		Mat img = imread("Part_OpenCV.jpg");
+		Mat dst;
+		cvtColor(img, dst, COLOR_BGR2GRAY);
+		namedWindow("Canny Track Bar", WINDOW_AUTOSIZE);
+	}
+
 	static void testOpenCV() {
 		setBreakOnError(true);
 		//distortImg("kush.png");
@@ -262,3 +273,5 @@ namespace jdg {
 		destroyAllWindows();
 	}
 }
+
+#endif // !__UTILS__H__

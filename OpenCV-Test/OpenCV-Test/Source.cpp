@@ -4,8 +4,10 @@
 	author: JDG
 */
 #include "Utils.hpp"
+#include "TrackBar.hpp"
 
 int main(int argc, char** argv) {
-	jdg::testOpenCV();
+	//jdg::testOpenCV();
+	tb::testCannyTrackBar();
 	return 0;
 }
