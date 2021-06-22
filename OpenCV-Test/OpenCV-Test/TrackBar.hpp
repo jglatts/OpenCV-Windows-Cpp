@@ -10,27 +10,24 @@ namespace tb {
 	using namespace cv;
 	using namespace std;
 	
-	Mat src, src_gray;
-	Mat dst, detected_edges;
+	Mat src, src_gray, detected_edges;
 
 	int lowThreshold = 0;
 	const int max_lowThreshold = 100;
-	const int ratio = 3;
+	const int ratio = 2;
 	const int kernel_size = 3;
 	const char* window_name = "Canny Test";
 
 	static void cannyThreshold(int, void*)
 	{
 		blur(src_gray, detected_edges, Size(3, 3));
+		imshow("Test", detected_edges);
 		Canny(detected_edges, detected_edges, lowThreshold, lowThreshold * ratio, kernel_size);
-		dst = Scalar::all(0);
-		src.copyTo(dst, detected_edges);
-		imshow(window_name, dst);
+		imshow(window_name, detected_edges);
 	}
 
 	static void testCannyTrackBar() {
-		src = imread("Part_OpenCV.jpg");
-		dst.create(src.size(), src.type());
+		src = imread("Part_OpenCV_Lg.jpg");
 		cvtColor(src, src_gray, COLOR_BGR2GRAY);
 		namedWindow(window_name, WINDOW_AUTOSIZE);
 		createTrackbar("Min Thresh:", window_name, &lowThreshold, max_lowThreshold, cannyThreshold);
