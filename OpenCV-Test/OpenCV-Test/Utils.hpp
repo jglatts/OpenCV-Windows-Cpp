@@ -53,18 +53,12 @@ namespace jdg {
 		int ratio = 3;
 		int low_thresh = 50;
 		dst = src.clone();
-		// may need a call to blur() for filtering purposes
-		// canny very sensitive with current params -> good or bad?
-		// tweak Canny param values -> research docs
-		// try a trackbar?? at somepoint and see what we get 
 		// https://docs.opencv.org/3.4/da/d5c/tutorial_canny_detector.html
 		Canny(dst, bw, low_thresh, low_thresh * ratio, 3);
 		findContours(bw.clone(), contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
-		cout << "Contours Size: " << contours.size() << endl;
 		for (int i = 0; i < contours.size(); i++) {
 			// find the angles -> should be reviewed and tweaked
 			approxPolyDP(Mat(contours[i]), approx, arcLength(Mat(contours[i]), true) * 0.02, true);
-			// check the contour area -> should be tweaked
 			if (fabs(contourArea(contours[i])) < 100 || !isContourConvex(approx)) continue;
 			int vertices = approx.size();
 			vector<double> cosine_corners;
@@ -79,13 +73,18 @@ namespace jdg {
 			if (vertices == 4 && min_cos >= -0.1 && max_cos <= 0.3) {
 				cout << "Found a Rectangle" << endl;
 				setLabel(dst, "RECT", contours[i]);
-				imshow("dst", dst);
-				waitKey(2000);
+				setLabel(bw, "RECT", contours[i]);
+			}
+			else if (vertices == 4) {
+				cout << "min_cos: " << min_cos << endl;
+				cout << "max_cos: " << max_cos << endl;
+				setLabel(dst, "RECT", contours[i]);
+				setLabel(bw, "RECT", contours[i]);
 			}
 			else cout << "No Rect Found" << endl;
 		}
 		imshow("dst", dst);
-		imshow("BW", bw);
+		imshow("edge map", bw);
 		if (check) waitKey(0);
 	}
 
@@ -125,7 +124,7 @@ namespace jdg {
 	Mat applyThresh(Mat& img, int thresh) {
 		//https://docs.opencv.org/3.4/db/d8e/tutorial_threshold.html
 		Mat dst, gray;
-		int thresh_type = 2; // threshold truncate
+		int thresh_type = 3; // threshold truncate
 		cvtColor(img, gray, COLOR_BGR2GRAY);
 		threshold(gray, dst, thresh, 255, thresh_type);
 		return dst;
@@ -134,14 +133,11 @@ namespace jdg {
 	static void testThresh(bool check) {
 		if (check) {
 			// get a clearer image of the part 
-			Mat img = imread("Part_OpenCV.jpg");
+			Mat img = imread("Part_3.png");
 			// working on the best fine-tuned thresh params
 			Mat img_thresh = applyThresh(img, 103);
 			Mat dst;
 			resize(img_thresh, dst, Size(300, 300));
-			// find best params for thresh then call detectRect() 
-			//imshow("Test Thresh", img_thresh);
-			//waitKey(0);
 			detectRect(dst, NO_WEBCAM);
 		}
 		else {
@@ -154,6 +150,7 @@ namespace jdg {
 			while (1) {
 				cap.read(frame);
 				if (frame.empty()) break;
+				Mat thresh = applyThresh(frame, 103);
 				detectRect(frame, USE_WEBCAM);
 				if (waitKey(1) == ESC_KEY) break;
 			}
@@ -256,20 +253,9 @@ namespace jdg {
 		}
 	}
 
-	static void runTrackBar() {
-		Mat img = imread("Part_OpenCV.jpg");
-		Mat dst;
-		cvtColor(img, dst, COLOR_BGR2GRAY);
-		namedWindow("Canny Track Bar", WINDOW_AUTOSIZE);
-	}
-
 	static void testOpenCV() {
 		setBreakOnError(true);
-		//distortImg("kush.png");
-		//getWebCam();
-		//runRectDetection(NO_WEBCAM);
-		//runDetection();
-		testThresh(NO_WEBCAM);
+		testThresh(USE_WEBCAM);
 		destroyAllWindows();
 	}
 }
