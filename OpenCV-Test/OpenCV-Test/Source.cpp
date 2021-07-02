@@ -5,9 +5,12 @@
 */
 #include "Utils.hpp"
 #include "TrackBar.hpp"
+#include "ShapeDetect.h"
 
 int main(int argc, char** argv) {
+	ShapeDetect sd("shapes.jpg");
+	sd.runTest();
 	//jdg::testOpenCV();
-	tb::testCannyTrackBar();
+	//tb::testCannyTrackBar();
 	return 0;
 }

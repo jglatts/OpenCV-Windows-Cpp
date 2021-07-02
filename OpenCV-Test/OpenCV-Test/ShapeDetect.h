@@ -25,6 +25,7 @@ private:
 	Shapes shape;
 	cv::Mat src_img;
 	std::vector<cv::Point> contoursConvexHull(std::vector<std::vector<cv::Point>>);
+	void setLabel(cv::Mat&, std::string, std::vector<cv::Point>&);
 	void runDetection();
 	void detect(Shapes);
 };
