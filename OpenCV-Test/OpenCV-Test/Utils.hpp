@@ -109,7 +109,7 @@ namespace jdg {
 		if (check) detectRect(img, NO_WEBCAM);
 		else {
 			if (!cap.open(0)) {
-				cout << "Could not open or find the webam" << endl;
+				cout << "Could not open or find the webcam" << endl;
 				exit(1);
 			}
 			while (1) {
