@@ -17,13 +17,16 @@ public:
 		RECTANGLE,
 		ALL_SHAPES
 	};
-	ShapeDetect(const char*);
-	ShapeDetect(cv::Mat);
+	ShapeDetect(const char*, bool);
+	ShapeDetect(cv::Mat, bool);
 	cv::Mat getImg();
 	const char* getImgName();
 	bool setImg(cv::Mat);
 	bool smoothCanny(cv::Mat&);
 	void detectShape(Shapes);
+	void findCutGap();
+	void detectGap();
+	void detectGapTest();
 	void runTest();
 
 private:
@@ -33,7 +36,10 @@ private:
 	void checkImgSize(cv::Mat&);
 	void setLabel(cv::Mat&, std::string, std::vector<cv::Point>&);
 	void runDetection();
+	void translateContours(std::vector<cv::Point>&, int);
 	void detect(Shapes);
+	void detectGap(cv::Mat&);
+	bool use_webcam;
 };
 
 #endif // !__SHAPEDETECT__H__
