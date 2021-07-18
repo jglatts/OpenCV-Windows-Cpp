@@ -1,3 +1,20 @@
+/*
+
+	Get it working with cut-gaps!
+	 - need to find best param's for part photos
+	 - good photos now in folder
+	 - https://iq.opengenus.org/connected-component-labeling/
+	 - ^^ look at connectedComponents()
+	
+	Should find the convexHull of the cut gap to close lines
+		- minAreaRect() in the contours to find cutgap then convexHull()
+		- getting good output with appyling thresh before
+		- hook up to the detection and run conveHull() on the thresh'd image
+		
+
+	Use with webcam!
+
+*/
 #include "ShapeDetect.h"
 #include <opencv2/opencv.hpp>
 #include <opencv2/objdetect.hpp>
@@ -135,7 +152,7 @@ bool ShapeDetect::smoothCanny(Mat& src) {
 }
 
 void ShapeDetect::detectGap() {
-	// look at detectGapTest() -> working for finding cut gaps
+	// look at detectGapTest() -> it's close!
 	// Threshold values :
 	// 		thresh_val: 62
 	// 		thresh_type : 4 (Threshold to Zero)
@@ -199,7 +216,7 @@ void ShapeDetect::detectGapTest() {
 	images[4] = imread("Part_Gap_After_Gap_Found.bmp");
 	for (int i = 0; i < 5; ++i) {
 		detectGap(images[i]);
-		(i < 4) ? destroyAllWindows() : (void) waitKey();
+		(i < 3) ? destroyAllWindows() : (void) waitKey();
 	}
 }
 
@@ -244,7 +261,7 @@ void ShapeDetect::detectGap(Mat& src) {
 		cout << "rect_right_pos " << rect_right_pos << endl;
 		cout << "center_pos " << center_pos << endl;
 		line(src_roi, Point(rect_right_pos, 40), Point(rect_left_pos, 40), Scalar(0, 0, 255), 2);
-		line(src_roi, Point(center_pos, 0), Point(center_pos, src_img.size[0]), Scalar(0, 0, 255), 2);
+		line(src_roi, Point(center_pos, 0), Point(center_pos, src_img.size[0]), Scalar(255, 0, 0), 2);
 	}
 	imshow("Cut Cap", src_roi);
 	waitKey(2000);
