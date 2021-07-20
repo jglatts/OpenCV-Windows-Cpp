@@ -144,8 +144,6 @@ void ShapeDetect::detectGap(Mat& src) {
 		line(src_roi, Point(rect_right_pos, 40), Point(rect_left_pos, 40), Scalar(0, 0, 255), 2);
 		line(src_roi, Point(center_pos, 0), Point(center_pos, src_img.size[0]), Scalar(255, 0, 0), 2);
 	}
-	Mat dst;
-	resize(src_roi, dst, Size(3, 3));
 	imshow("Cut Cap", src_roi);
 	waitKey(1000);
 }
