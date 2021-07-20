@@ -6,8 +6,6 @@
 #include <iostream>
 
 #define IMG_SIZE_LIMIT 2000
-#define USE_WEBCAM     true
-#define NO_WEBCAM      false
 
 class ShapeDetect {
 public:
@@ -19,15 +17,10 @@ public:
 	};
 	ShapeDetect(const char*, bool);
 	ShapeDetect(cv::Mat, bool);
-	cv::Mat getImg();
-	const char* getImgName();
 	bool setImg(cv::Mat);
-	bool smoothCanny(cv::Mat&);
 	void detectShape(Shapes);
-	void findCutGap();
 	void detectGap();
 	void detectGapTest();
-	void runTest();
 
 private:
 	Shapes shape;
@@ -35,7 +28,6 @@ private:
 	std::vector<cv::Point> contoursConvexHull(std::vector<std::vector<cv::Point>>);
 	void checkImgSize(cv::Mat&);
 	void setLabel(cv::Mat&, std::string, std::vector<cv::Point>&);
-	void runDetection();
 	void translateContours(std::vector<cv::Point>&, int);
 	void detect(Shapes);
 	void detectGap(cv::Mat&);
