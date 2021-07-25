@@ -2,6 +2,9 @@
 	Working with CutGaps!
 	Test with other part images
 
+	Figure out best WIRE_CONSTANT to use 
+	Smooth canny() to get crisper edges
+
 	Use with webcam (HiDef)!
 */
 #include "ShapeDetect.h"
@@ -17,25 +20,33 @@
 using namespace cv;
 using namespace std;
 
+ShapeDetect::ShapeDetect() {
+	// add the default-val fields here
+	// the c'tor will be called when using Cam
+	src_img = Mat();	// make a default image
+	out_stream.open(default_file_name);
+	shape = ShapeDetect::ALL_SHAPES;
+}
+
 ShapeDetect::ShapeDetect(const char* img_name, bool cam_check) {
 	src_img = imread(img_name);
 	if (src_img.empty()) exit(1);
 	checkImgSize(src_img);
+	out_stream.open(default_file_name);
 	shape = ShapeDetect::ALL_SHAPES;
-	use_webcam = (cam_check) ? true : false;
 }
 
 ShapeDetect::ShapeDetect(Mat img, bool cam_check) {
+	if (img.empty()) exit(1);
 	src_img = img.clone();
-	if (src_img.empty()) exit(1);
 	checkImgSize(src_img);
+	out_stream.open(default_file_name);
 	shape = ShapeDetect::ALL_SHAPES;
-	use_webcam = (cam_check) ? true : false;
 }
 
 bool ShapeDetect::setImg(Mat img) {
-	src_img = img.clone();
 	if (src_img.empty()) return false;
+	src_img = img.clone();
 	checkImgSize(src_img);
 	return true;
 }
@@ -74,7 +85,8 @@ vector<Point> ShapeDetect::contoursConvexHull(vector<vector<Point>> contours) {
 	for (size_t i = 0; i < contours.size(); i++)
 		for (size_t j = 0; j < contours[i].size(); j++)
 			pts.push_back(contours[i][j]);
-	convexHull(pts, result);
+	if (pts.size() > 0)
+		convexHull(pts, result);
 	return result;
 }
 
@@ -83,24 +95,49 @@ void ShapeDetect::detectGap() {
 	waitKey();
 }
 
+void ShapeDetect::detectGapWithCam() {
+	Mat frame;
+	VideoCapture cap;
+	if (!cap.open(0)) {
+		cout << "Could not open or find the webam" << endl;
+		exit(1);
+	}
+	while (1) {
+		cap.read(frame);
+		if (frame.empty()) break;
+		detectGap(frame);
+		waitKey(1);
+	}
+}
+
 void ShapeDetect::detectGapTest() {
 	/*
 		7/16/21 WORKING!!!
 			- succesfully identifiying gap
 			- test with more cut gaps
 	*/
-	Mat images[5];
+	Mat images[6];
 	images[0] = imread("Part_Gap_Just_Wires.bmp");
 	images[1] = imread("Part_Gap_Wires_With_Small_Gap.bmp");
 	images[2] = imread("Part_Gap_With_Big_Gap.bmp");
 	images[3] = imread("Part_Gap_With_Big_Gap_And_Next_Group.bmp");
 	images[4] = imread("Part_Gap_After_Gap_Found.bmp");
-	for (int i = 0; i < 5; ++i) {
+	images[5] = imread("Another_Gap.bmp");
+	for (int i = 0; i < 6; ++i) {
 		detectGap(images[i]);
-		(i < 4) ? destroyAllWindows() : (void) waitKey();
+		if (i < 5) {
+			waitKey(1000);
+			destroyAllWindows();
+		}
+		else waitKey();
 	}
 }
 
+/*
+	Detects Z-Axis Cut Gaps
+	Does not block after showing the image
+	Caller will have to then call waitKey() for image to stay displayed 
+*/
 void ShapeDetect::detectGap(Mat& src) {
 	Mat src_gray, src_canny, src_roi, src_thresh;
 	Mat roi_left, roi_right;
@@ -110,7 +147,7 @@ void ShapeDetect::detectGap(Mat& src) {
 	src_roi = src(Range(50, src.size[0]), Range(0, src.size[1]));
 	cvtColor(src_roi, src_gray, COLOR_BGR2GRAY);
 	threshold(src_gray, src_thresh, 62, 255, THRESH_TOZERO_INV);
-	Canny(src_thresh, src_canny, 37, 111, 3, true);
+	Canny(src_thresh, src_canny, 37, 111, 3, true);	// tweak canny + thresh to get crisper edges
 	findContours(src_canny, contours, RETR_EXTERNAL, CHAIN_APPROX_NONE);
 	cout << "# of Contours " << contours.size() << endl;
 	if (contours.size() < wire_constant) {
@@ -138,20 +175,19 @@ void ShapeDetect::detectGap(Mat& src) {
 		int rect_left_pos = rect_left.x + rect_left.width;
 		int rect_right_pos = rect_right.x;
 		int center_pos = (rect_left_pos + rect_right_pos) / 2;
-		cout << "rect_left_pos " << rect_left_pos << endl;
-		cout << "rect_right_pos " << rect_right_pos << endl;
-		cout << "center_pos " << center_pos << endl;
-		line(src_roi, Point(rect_right_pos, 40), Point(rect_left_pos, 40), Scalar(0, 0, 255), 2);
-		line(src_roi, Point(center_pos, 0), Point(center_pos, src_img.size[0]), Scalar(255, 0, 0), 2);
+		line(src_roi, Point(rect_right_pos, 40), Point(rect_left_pos, 40), Scalar(0, 0, 255), 1);
+		line(src_roi, Point(center_pos, 0), Point(center_pos, src_img.size[0]), Scalar(255, 0, 0), 1);
+		imwrite("gap_found.bmp", src_roi);
 	}
-	imshow("Cut Cap", src_roi);
-	waitKey(1000);
+	Mat gap_img;
+	resize(src_roi, gap_img, Size(350, 650));
+	imshow("Canny", src_canny);
+	imshow("Cut cap", gap_img);
 }
 
 void ShapeDetect::translateContours(vector<Point>& contour_points, int scale) {
-	for (int i = 0; i < contour_points.size(); ++i) {
+	for (int i = 0; i < contour_points.size(); ++i)  
 		contour_points[i].x += scale;
-	}
 }
 
 void ShapeDetect::setLabel(Mat& im, string label, vector<Point>& contour) {
