@@ -3,11 +3,17 @@
 
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
+#include <stdio.h>
+#include <fstream>
 #include <iostream>
 
-#define IMG_SIZE_LIMIT 2000
 
 class ShapeDetect {
+
+#define IMG_SIZE_LIMIT 2000
+#define USE_WEBCAM true
+#define NO_WEBCAM  false
+
 public:
 	typedef enum Shapes {
 		CIRCLE,
@@ -15,11 +21,13 @@ public:
 		RECTANGLE,
 		ALL_SHAPES
 	};
+	ShapeDetect();
 	ShapeDetect(const char*, bool);
 	ShapeDetect(cv::Mat, bool);
 	bool setImg(cv::Mat);
 	void detectShape(Shapes);
 	void detectGap();
+	void detectGapWithCam();
 	void detectGapTest();
 
 private:
@@ -31,7 +39,11 @@ private:
 	void translateContours(std::vector<cv::Point>&, int);
 	void detect(Shapes);
 	void detectGap(cv::Mat&);
-	bool use_webcam;
+	std::ofstream out_stream; 
+	FILE* outfile;            
+	const char* default_file_name = "motor.txt";
+	// put WIRE_CONSTANT val here 
+	// so can not be mut'd by user 
 };
 
 #endif // !__SHAPEDETECT__H__
