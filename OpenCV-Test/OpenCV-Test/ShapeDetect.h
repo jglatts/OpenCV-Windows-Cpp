@@ -22,8 +22,8 @@ public:
 		ALL_SHAPES
 	};
 	ShapeDetect();
-	ShapeDetect(const char*, bool);
-	ShapeDetect(cv::Mat, bool);
+	ShapeDetect(const char*);
+	ShapeDetect(cv::Mat);
 	bool setImg(cv::Mat);
 	void detectShape(Shapes);
 	void detectGap();
@@ -39,6 +39,7 @@ private:
 	void translateContours(std::vector<cv::Point>&, int);
 	void detect(Shapes);
 	void detectGap(cv::Mat&);
+	void analyzeFrame(cv::Mat&, cv::Mat&);
 	std::ofstream out_stream; 
 	FILE* outfile;            
 	const char* default_file_name = "motor.txt";
